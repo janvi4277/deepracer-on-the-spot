@@ -50,7 +50,7 @@ def reward_function(params):
         total_angle-=180
     elif total_angle <-90:
         total_angle+=180
-    if abs(total_angle)<=7:
+    if abs(total_angle)<=9:
         total_angle=0
     if next ==1 or prev==1 or (next+1)%waypoints_length ==1 or (next+2)%waypoints_length ==1 or (next+3)%waypoints_length ==1 or (next+4)%waypoints_length ==1 or (next+5)%waypoints_length ==1 or (next+6)%waypoints_length ==1 or (next+7)%waypoints_length ==1 or (prev -1 +waypoints_length)%waypoints_length ==1:
         total_angle =0
@@ -65,7 +65,7 @@ def reward_function(params):
     reward=reward+ steering_reward
     if direction_diff <=10.0:
         reward+=10.0
-    if abs(total_angle)<=7:
+    if abs(total_angle)<=9:
         if params['speed'] >=3:
             reward+=30
         if params['speed'] >=3.4:
@@ -83,17 +83,17 @@ def reward_function(params):
         opt_speed=max(1.5,opt_speed)
         reward+=(5-abs(params['speed']-opt_speed))**2
         
-    if abs(params['steering_angle']-total_angle) >=18:
+    if abs(params['steering_angle']-total_angle) >=10:
         reward*=0.25
-    if abs(params['steering_angle'])<10 and abs(total_angle)>25:
+    if abs(params['steering_angle'])<10 and abs(total_angle)>20:
         return 1e-3
     if total_angle >10 and params['is_left_of_center']:
         reward+=100.0
     if total_angle < -10 and not params['is_left_of_center']:
         reward+=100.0
-    if abs(params['steering_angle'])>=25 and abs(total_angle)>=25 and total_angle*params['steering_angle']>=0:
+    if abs(params['steering_angle'])>=25 and abs(total_angle)>25 and total_angle*params['steering_angle']>=0:
         reward+=100.0
-    if abs(params['steering_angle'])>10 and abs(total_angle)<12 and total_angle*params['steering_angle']>=0:
+    if abs(params['steering_angle'])>0 and abs(total_angle)<10 and total_angle*params['steering_angle']>=0:
         return 1e-3
     if total_angle>20 and params['is_left_of_center']:
         reward+=20.0
