@@ -17,6 +17,7 @@ def reward_function(params):
     if next_point in waypoints:
         if distance_from_center>marker_1:
             return 1e-7
+        return speed-2*(distance_from_center)
     
     return float(speed)
     
