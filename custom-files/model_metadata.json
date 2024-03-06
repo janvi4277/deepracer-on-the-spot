@@ -9,14 +9,6 @@
       "speed": 1.6
     },
     {
-      "steering_angle": -27.5,
-      "speed": 1.8
-    },
-    {
-      "steering_angle": 27.5,
-      "speed": 1.8
-    },
-    {
       "steering_angle": -25,
       "speed": 2.0
     },
