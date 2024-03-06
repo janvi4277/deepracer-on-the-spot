@@ -17,6 +17,7 @@ def reward_function(params):
         return 1e-9
     waypoints = params['waypoints']
     closest_waypoints = params['closest_waypoints']
+    straight_waypoints = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,139,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169];
     # Calculate the direction of the center line based on the closest waypoints
     waypoints_length= len(waypoints)
     prev = int(closest_waypoints[0])
@@ -93,14 +94,22 @@ def reward_function(params):
         reward+=100.0
     if abs(params['steering_angle'])>=25 and abs(total_angle)>=25 and total_angle*params['steering_angle']>=0:
         reward+=100.0
+    if params['steering_angle']<=-23 and total_angle<=23:
+        reward+=50.0 
+
     if abs(params['steering_angle'])>7 and abs(total_angle)<9 and total_angle*params['steering_angle']>=0:
         return 1e-3
     if total_angle>20 and params['is_left_of_center']:
-        reward= reward + 40.0*(params['distance_from_center']/params['track_width'])
-    if total_angle<-20 and not params['is_left_of_center']:
-        reward+= 40.0*(params['distance_from_center']/params['track_width'])
+        reward+=20.0
+    if total_angle<-15 and not params['is_left_of_center']:
+        reward+=20.0
     if total_angle>26 and params['is_left_of_center']:
-        reward+=60.0*(params['distance_from_center']/params['track_width'])
-    if total_angle<-26 and not params['is_left_of_center']:
-        reward+=60.0*(params['distance_from_center']/params['track_width'])
+        reward+=30.0
+    if total_angle<-20 and not params['is_left_of_center']:
+        reward+=30.0
+
+    if (closest_waypoints[0] and closest_waypoints[1] and closest_waypoints[1]+1) in straight_waypoints:
+        if abs(params['distance_from_center'])<=0.1*params['track_width']:
+            reward = reward+params['speed']*params['speed']*params['speed'];
+    
     return float(reward)
