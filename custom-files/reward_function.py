@@ -21,7 +21,7 @@ def reward_function(params):
         return 1e-10
 
     if next_point in straight_waypoints:
-        return speed**3
+        return speed**3 + 64/(1+0.5*abs(params['steering_angle']))
     if next_point in left_waypoints or next_point in not_very_left:
         if not params['is_left_of_center']:
             return 1e-7
