@@ -102,7 +102,7 @@ def reward_function(params):
             reward+=10
 
     if next in left_waypoints and params['is_left_of_center']:
-        reward+=60.0
+        reward+=40.0
         if params['distance_from_center']>=0.3*params['track_width']:
            reward+=80.0 
         elif params['distance_from_center']>=0.2*params['track_width']:
@@ -110,7 +110,7 @@ def reward_function(params):
         elif  params['distance_from_center']>=0.1*params['track_width']:
             reward+=60.0
     if next in right_waypoints and not params['is_left_of_center']:
-        reward+=70.0
+        reward+=50.0
         if params['distance_from_center']>=0.3*params['track_width']:
            reward+=90.0 
         elif params['distance_from_center']>=0.2*params['track_width']:
@@ -118,7 +118,7 @@ def reward_function(params):
         elif  params['distance_from_center']>=0.1*params['track_width']:
             reward+=60.0
     if next in not_very_left and params['is_left_of_center']:
-        reward+=70.0
+        reward+=50.0
         if  params['distance_from_center']>=0.1*params['track_width']:
             reward+=50.0
     return float(reward)
