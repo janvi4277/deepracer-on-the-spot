@@ -17,11 +17,11 @@ def reward_function(params):
         return 1e-9
     waypoints = params['waypoints']
     closest_waypoints = params['closest_waypoints']
-    # Calculate the direction of the center line based on the closest waypoints
     straight_waypoints = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,139,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169];
     left_waypoints=[93,94,95,96,97,98,99,100,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51]
     right_waypoints=[67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84]
     not_very_left=[120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135]
+    # Calculate the direction of the center line based on the closest waypoints
     waypoints_length= len(waypoints)
     prev = int(closest_waypoints[0])
     next = int(closest_waypoints[1])
@@ -71,39 +71,38 @@ def reward_function(params):
         reward+=10.0
     if abs(total_angle)<=5:
         if params['speed'] >=3:
-            reward+=30
-        if params['speed'] >=3.4:
-            reward+=30
-        if params['speed'] >=3.8:
-            reward+=30
-        if params['speed'] >=4:
-            reward+=30
-        if params['speed'] >=4.2:
-            reward+=30
-        if params['speed'] >=4.4:
             reward+=50
+        if params['speed'] >=3.4:
+            reward+=50
+        if params['speed'] >=3.8:
+            reward+=50
+        if params['speed'] >=4:
+            reward+=50
+        if params['speed'] >=4.2:
+            reward+=50
+        if params['speed'] >=4.4:
+            reward+=70
     else:
         opt_speed= 5*math.tanh(8/(1+abs(total_angle)))
-        opt_speed=max(1.2,opt_speed)
+        opt_speed=max(1.4,opt_speed)
         reward+=(5-abs(params['speed']-opt_speed))**2
-        
+
     if abs(params['steering_angle']-total_angle) >=10:
         reward*=0.25
     if abs(params['steering_angle'])<10 and abs(total_angle)>20:
         return 1e-3
     
-    if abs(params['steering_angle'])>=16 and abs(total_angle)>=16 and total_angle*params['steering_angle']>=0:
-        reward+=50.0
-    if abs(params['steering_angle'])>3 and total_angle<6 and total_angle*params['steering_angle']>=0:
-        return 1e-3
-    
+
     if next in straight_waypoints:
-        if abs(params['steering_angle'])>2:
-            return 1e-3
-        if params['distance_from_center']<=0.1*params['track_width']:
-            reward+=100.0
+        if params['distance_from_center']==0:
+            reward=reward+120
+        elif params['distance_from_center']<=0.1*params['track_width']:
+            reward+=60
+        elif params['distance_from_center']<=0.2*params['track_width']:
+            reward+=10
+
     if next in left_waypoints and params['is_left_of_center']:
-        reward+=100.0
+        reward+=60.0
         if params['distance_from_center']>=0.3*params['track_width']:
            reward+=80.0 
         elif params['distance_from_center']>=0.2*params['track_width']:
@@ -111,7 +110,7 @@ def reward_function(params):
         elif  params['distance_from_center']>=0.1*params['track_width']:
             reward+=60.0
     if next in right_waypoints and not params['is_left_of_center']:
-        reward+=110.0
+        reward+=70.0
         if params['distance_from_center']>=0.3*params['track_width']:
            reward+=90.0 
         elif params['distance_from_center']>=0.2*params['track_width']:
@@ -119,8 +118,7 @@ def reward_function(params):
         elif  params['distance_from_center']>=0.1*params['track_width']:
             reward+=60.0
     if next in not_very_left and params['is_left_of_center']:
-        reward+=100.0
+        reward+=70.0
         if  params['distance_from_center']>=0.1*params['track_width']:
             reward+=50.0
-        
     return float(reward)
