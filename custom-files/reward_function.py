@@ -17,10 +17,11 @@ def reward_function(params):
         return 1e-9
     waypoints = params['waypoints']
     closest_waypoints = params['closest_waypoints']
-    straight_waypoints = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,139,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169];
-    left_waypoints=[93,94,95,96,97,98,99,100,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51]
-    right_waypoints=[67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84]
-    not_very_left=[120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135]
+    straight_waypoints = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169];
+    left_waypoints=[93,94,95,96,97,98,99,100,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,117,118,119,120,121,132,133,134,135]
+    right_waypoints=[77,78,79,80,81,82,83]
+    not_very_right_waypoints=[67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84]
+    not_very_left=[122, 123, 124, 125, 126, 127, 128, 129, 130, 131]
     # Calculate the direction of the center line based on the closest waypoints
     waypoints_length= len(waypoints)
     prev = int(closest_waypoints[0])
@@ -105,28 +106,32 @@ def reward_function(params):
         if params['distance_from_center']==0:
             reward=reward+120
         elif params['distance_from_center']<=0.1*params['track_width']:
-            reward+=60
+            reward+=3*(params['speed']**2)
         elif params['distance_from_center']<=0.2*params['track_width']:
-            reward+=10
+            reward+=(params['speed']**2)
 
     if next in left_waypoints and params['is_left_of_center']:
         reward+=60.0
         if params['distance_from_center']>=0.3*params['track_width']:
-           reward+=3*(params['speed']**2) 
+           reward+=50
         elif params['distance_from_center']>=0.2*params['track_width']:
-           reward+=2*(params['speed']**2) 
+           reward+=30
         elif  params['distance_from_center']>=0.1*params['track_width']:
-            reward+=params['speed']**2
+            reward+=20
     if next in right_waypoints and not params['is_left_of_center']:
         reward+=60.0
         if params['distance_from_center']>=0.3*params['track_width']:
-           reward+=3*(params['speed']**2) 
+           reward+=50
         elif params['distance_from_center']>=0.2*params['track_width']:
-           reward+=2*(params['speed']**2) 
+           reward+=30
         elif  params['distance_from_center']>=0.1*params['track_width']:
-            reward+=(params['speed']**2) 
+            reward+=20 
+    if next in not_very_right_waypoints and not params['is_left_of_center']:
+        reward+=60.0
+        if params['distance_from_center']>=0.1*params['track_width']:
+           reward+=50
     if next in not_very_left and params['is_left_of_center']:
-        reward+=50.0
+        reward+=60.0
         if  params['distance_from_center']>=0.1*params['track_width']:
-            reward+=3*(params['speed']**2) 
+            reward+=50
     return float(reward)
