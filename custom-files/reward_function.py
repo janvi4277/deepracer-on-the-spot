@@ -99,8 +99,6 @@ def reward_function(params):
         reward*=0.25
     if abs(params['steering_angle'])<10 and abs(total_angle)>20:
         return 1e-3
-    if params['steering_angle']>7 and total_angle<9 and total_angle*params['steering_angle']>=0:
-        return 1e-3
 
     if next in straight_waypoints:
 
