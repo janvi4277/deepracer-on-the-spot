@@ -77,6 +77,9 @@ def reward_function(params):
         total_angle=30
     elif total_angle <-30:
         total_angle=-30
+
+    # if abs(total_angle)<=5:
+    #     total_angle=0
     if next ==1 or prev==1 or (next+1)%waypoints_length ==1 or (next+2)%waypoints_length ==1 or (next+3)%waypoints_length ==1 or (next+4)%waypoints_length ==1 or (next+5)%waypoints_length ==1 or (next+6)%waypoints_length ==1 or (next+7)%waypoints_length ==1 or (prev -1 +waypoints_length)%waypoints_length ==1:
         total_angle = 0
 
@@ -116,11 +119,11 @@ def reward_function(params):
     if next in straight_waypoints:
 
         if params['distance_from_center']==0:
-            reward=reward+5*(params['speed']**2)
+            reward=reward+60
         elif params['distance_from_center']<=0.1*params['track_width']:
-            reward+=3*(params['speed']**2)
+            reward+=40
         elif params['distance_from_center']<=0.2*params['track_width']:
-            reward+=(params['speed']**2)
+            reward+=20
 
     if next in left_waypoints and params['is_left_of_center']:
         reward+=60.0
