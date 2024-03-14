@@ -46,13 +46,9 @@ def reward_function(params):
     track_direction = math.degrees(track_direction)
 
     # Calculate the difference between the track direction and the heading direction of the car
-    straight_direction_diff = abs(track_direction - params['heading']-params['steering_angle'])
     direction_diff = abs(track_direction - params['heading'])
     if direction_diff > 180:
         direction_diff = 360 - direction_diff
-
-    if straight_direction_diff>180:
-        straight_direction_diff= 360-straight_direction_diff
 
     # # Penalize the reward if the difference is too large
     # angle_f= angle_between_lines(next_point_1[0],next_point_1[1],next_point_2[0],next_point_2[1],next_point_3[0],next_point_3[1],next_point_4[0],next_point_4[1])
@@ -89,10 +85,9 @@ def reward_function(params):
     if (steps % 10) == 0 and progress > (steps / total_steps) * 100 :
         reward += 1700.0
 
-
-    if direction_diff <=10.0:
-        reward+=10.0
-    if abs(total_angle)<=5:
+    if abs(total_angle)<8:
+        reward += 75/(1+abs(params['steering_angle']))
+        reward += 75/(1+abs(direction_diff))
         if params['speed'] >=3:
             reward+=15
         if params['speed'] >=3.4:
