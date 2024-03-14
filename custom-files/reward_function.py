@@ -86,8 +86,8 @@ def reward_function(params):
     if next ==1 or prev==1 or (next+1)%waypoints_length ==1 or (next+2)%waypoints_length ==1 or (next+3)%waypoints_length ==1 or (next+4)%waypoints_length ==1 or (next+5)%waypoints_length ==1 or (next+6)%waypoints_length ==1 or (next+7)%waypoints_length ==1 or (prev -1 +waypoints_length)%waypoints_length ==1:
         total_angle = 0
 
-    if (steps % 20) == 0 and progress > (steps / total_steps) * 100 :
-        reward += 1000.0
+    if (steps % 10) == 0 and progress > (steps / total_steps) * 100 :
+        reward += 1700.0
 
 
     if direction_diff <=10.0:
