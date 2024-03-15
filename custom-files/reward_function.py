@@ -96,8 +96,8 @@ def reward_function(params):
     total_steps=211
     steps=params['steps']
     progress= params['progress']
-    if (steps % 10) == 0 and progress >= (steps / total_steps) * 100 :
-        reward += 1700
+    if (steps % 10) == 0 and progress < (steps / total_steps) * 100 :
+        return 1e-10
 
     if next in straight_waypoints:
         reward += 100/(1+abs(track_direction - params['heading']-params['steering_angle']))
