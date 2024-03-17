@@ -96,18 +96,14 @@ def reward_function(params):
     total_steps=211
     steps=params['steps']
     progress= params['progress']
-    if (steps % 20) == 0 and progress < (steps / total_steps) * 100 :
+    if progress == 100 and steps > 250:
         return 0.2*reward
+    
+    if (steps % 10) == 0 and progress >= (steps / total_steps) * 100 :
+        reward += 2000
 
     if next in straight_waypoints:
-        if abs(track_direction - params['heading']-params['steering_angle'])>0:
-            return 0.1*reward
-        if params['distance_from_center']<=0.2*params['track_width']:
-            reward+=(params['speed']**2)
-        if params['distance_from_center']<=0.1*params['track_width']:
-            reward+=2*(params['speed']**2)
-        if params['distance_from_center']==0:
-            reward=reward+60
+        reward += 200/(1+abs(track_direction - params['heading']-params['steering_angle']))
 
     if next in left_waypoints and params['is_left_of_center']:
         reward+=60.0
