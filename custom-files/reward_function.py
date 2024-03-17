@@ -1,5 +1,11 @@
 import math
 
+class PARAMS:
+    prev_speed = None
+    prev_steering_angle = None 
+    prev_steps = None
+    prev_direction_diff = None
+
 def angle_between_lines(x1, y1, x2, y2, x3, y3, x4, y4):
     dx1 = x2 - x1
     dy1 = y2 - y1
@@ -13,6 +19,16 @@ def angle_between_lines(x1, y1, x2, y2, x3, y3, x4, y4):
         deg= deg+360
     return deg
 def reward_function(params):
+    steps=params['steps']
+    speed=params['speed']
+    steering_angle=params['steering_angle']
+    progress= params['progress']
+
+    if PARAMS.prev_steps is None or steps < PARAMS.prev_steps:
+        PARAMS.prev_speed = None
+        PARAMS.prev_steering_angle = None
+        PARAMS.prev_direction_diff = None
+
     if params['is_offtrack'] or params['is_crashed']:
         return 1e-9
     waypoints = params['waypoints']
@@ -26,8 +42,7 @@ def reward_function(params):
     basic_right=[61,62,63,64,65,66,84,85,86,87,88]
     Total_time=14.0
     total_steps=211
-    steps=params['steps']
-    # Calculate the direction of the center line based on the closest waypoints
+# Calculate the direction of the center line based on the closest waypoints
     waypoints_length= len(waypoints)
     prev = int(closest_waypoints[0])
     next = int(closest_waypoints[1])
@@ -41,18 +56,17 @@ def reward_function(params):
     prev_point_2 = waypoints[(prev-1+waypoints_length)%waypoints_length]
 
     # Calculate the direction in radius, arctan2(dy, dx), the result is (-pi, pi) in radians
-    track_direction = math.atan2(next_point_1[1] - prev_point[1], next_point_1[0] - prev_point[0])
+    track_direction = math.atan2(next_point_1[1] - params['y'], next_point_1[0] - params['x'])
     # Convert to degree
     track_direction = math.degrees(track_direction)
 
     # Calculate the difference between the track direction and the heading direction of the car
-    straight_direction_diff = abs(track_direction - params['heading']-params['steering_angle'])
+    # straight_direction_diff = abs(track_direction - params['heading']-params['steering_angle'])
     direction_diff = abs(track_direction - params['heading'])
+    dir_diff=track_direction - params['heading']
     if direction_diff > 180:
         direction_diff = 360 - direction_diff
 
-    if straight_direction_diff>180:
-        straight_direction_diff= 360-straight_direction_diff
 
     # Penalize the reward if the difference is too large
     angle_f= angle_between_lines(next_point_1[0],next_point_1[1],next_point_2[0],next_point_2[1],next_point_3[0],next_point_3[1],next_point_4[0],next_point_4[1])
@@ -69,77 +83,133 @@ def reward_function(params):
     if next ==1 or prev==1 or (next+1)%waypoints_length ==1 or (next+2)%waypoints_length ==1 or (next+3)%waypoints_length ==1 or (next+4)%waypoints_length ==1 or (next+5)%waypoints_length ==1 or (next+6)%waypoints_length ==1 or (next+7)%waypoints_length ==1 or (prev -1 +waypoints_length)%waypoints_length ==1:
         total_angle =0
 
-    if next in straight_waypoints:
-        steering_reward = 100/(1+abs(straight_direction_diff - total_angle))
-    else:
-        steering_reward = 100/(1+abs(params['steering_angle']-total_angle))
-    if abs(total_angle) >30 and abs(params['steering_angle'])>25 and total_angle*params['steering_angle']>=0:
-        steering_reward=100
-    if params['steps'] > 0:
-        progress_reward =(params['progress'])/(params['steps'])+ params['progress']//2
-        reward += progress_reward
-    else:
-        return 1e-9
-    reward=reward+ steering_reward
-    if direction_diff <=10.0:
-        reward+=10.0
-    
+
     opt_speed= 5*math.tanh(8/(1+abs(total_angle)))
     opt_speed=max(1.4,opt_speed)
-    reward+=(5-abs(params['speed']-opt_speed))**2
+    speed_reward=(5-abs(params['speed']-opt_speed))**3
 
-    # if abs(params['steering_angle']-total_angle) >=10:
-    #     reward*=0.25
-    # if abs(params['steering_angle'])<10 and abs(total_angle)>20:
-    #     return 1e-3
+# //////////////////
+    speed_maintain_bonus=1.0
+#Check if the speed has dropped
+    is_turn_upcoming= next in right_waypoints or next in left_waypoints or next in not_very_left or next in not_very_right_waypoints
+    has_speed_dropped = False
+    is_heading_in_right_direction=False
+    if next in left_waypoints or next in not_very_left and dir_diff>=0:
+        is_heading_in_right_direction=True
+    if next in right_waypoints or next in not_very_right_waypoints and dir_diff<=0:
+        is_heading_in_right_direction=True
+    if PARAMS.prev_speed is not None:
+        if PARAMS.prev_speed > speed:
+            has_speed_dropped = True
+    #Penalize slowing down without good reason on straight portions
+    if has_speed_dropped and not is_turn_upcoming: 
+        speed_maintain_bonus = min( speed / PARAMS.prev_speed, 1 )
+    #Penalize making the heading direction worse
+    heading_decrease_bonus = 0
+    if PARAMS.prev_direction_diff is not None:
+        if is_heading_in_right_direction:
+            if abs( PARAMS.prev_direction_diff / direction_diff ) > 1:
+                heading_decrease_bonus = min(10, abs( PARAMS.prev_direction_diff / direction_diff ))
+    #has the steering angle changed
+    has_steering_angle_changed = False
+    if PARAMS.prev_steering_angle is not None:
+        if not(math.isclose(PARAMS.prev_steering_angle,steering_angle)):
+            has_steering_angle_changed = True
+    steering_angle_maintain_bonus = 1 
+    #Not changing the steering angle is a good thing if heading in the right direction
+    if is_heading_in_right_direction and not has_steering_angle_changed:
+        if abs(direction_diff) < 10:
+            steering_angle_maintain_bonus *= 2
+        if abs(direction_diff) < 5:
+            steering_angle_maintain_bonus *= 2
+        if PARAMS.prev_direction_diff is not None and abs(PARAMS.prev_direction_diff) > abs(direction_diff):
+            steering_angle_maintain_bonus *= 2
+# Reward for making steady progress
+    progress_reward = 10 * progress / (steps+1)
+    if steps <= 5:
+        progress_reward = 1 #ignore progress in the first 5 steps
+# Bonus that the agent gets for completing every 10 percent of track
+# Is exponential in the progress / steps. 
+# exponent increases with an increase in fraction of lap completed
+    intermediate_progress_bonus = 0
+    pi = int(progress//10)
+    if pi > 0 :
+        intermediate_progress_bonus = progress_reward ** (3+0.25*pi)
+
+# ////////
+    #Then compute the heading reward
+    heading_reward = math.cos( abs(direction_diff ) * ( math.pi / 180 ) ) ** 10
+    if abs(direction_diff) <= 20:
+        heading_reward = math.cos( abs(direction_diff ) * ( math.pi / 180 ) ) ** 4
+
+    reward=reward+steering_angle_maintain_bonus*heading_reward*25
+
     Total_time=14.0
     total_steps=211
-    steps=params['steps']
-    progress= params['progress']
-    if progress == 100 and steps > 250:
-        return 0.2*reward
+
+    # if progress == 100 and steps > 250:
+    #     return 0.5*reward
     
-    if (steps % 10) == 0 and progress >= (steps / total_steps) * 100 :
-        reward += 2000
-    elif (steps %10) == 0 and progress <=(steps/total_steps)*100:
-        reward -=1000
+    # if (steps % 10) == 0 and progress >= (steps / total_steps) * 100 :
+    #     reward += 1000
+    # elif (steps %10) == 0 and progress <=(steps/total_steps)*100:
+    #     reward -=500
     
     if next in straight_waypoints:
         reward += 200/(1+abs(track_direction - params['heading']-params['steering_angle']))
 
     if next in left_waypoints and params['is_left_of_center']:
-        reward+=60.0
+        reward+=30.0
         if  params['distance_from_center']>=0.1*params['track_width']:
             reward+=20
         if params['distance_from_center']>=0.2*params['track_width']:
            reward+=30
         if params['distance_from_center']>=0.3*params['track_width']:
            reward+=50
+        if params['distance_from_center']>=0.47*params['track_width']:
+            reward-=20
 
     if next in right_waypoints and not params['is_left_of_center']:
-        reward+=60.0
-        if  params['distance_from_center']>=0.1*params['track_width']:
+        reward+=30.0
+        if params['distance_from_center']>=0.1*params['track_width']:
             reward+=20
         if params['distance_from_center']>=0.2*params['track_width']:
-           reward+=30
+            reward+=30
         if params['distance_from_center']>=0.3*params['track_width']:
-           reward+=50 
+            reward+=50
+        if params['distance_from_center']>=0.47*params['track_width']:
+            reward-=20
     if next in not_very_right_waypoints and not params['is_left_of_center']:
         reward+=60.0
         if params['distance_from_center']>=0.1*params['track_width']:
            reward+=20
         if params['distance_from_center']>=0.2*params['track_width']:
            reward+=40
+        if params['distance_from_center']>=0.47*params['track_width']:
+            reward-=20
     if next in not_very_left and params['is_left_of_center']:
         reward+=60.0
         if params['distance_from_center']>=0.1*params['track_width']:
            reward+=20
         if params['distance_from_center']>=0.2*params['track_width']:
            reward+=40
+        if params['distance_from_center']>=0.47*params['track_width']:
+            reward-=20
     if next in basic_left:
         if params['is_left_of_center'] or params['distance_from_center']==0:
             reward+=100
+        if params['distance_from_center']>=0.47*params['track_width']:
+            reward-=20
     if next in basic_right:
         if not params['is_left_of_center'] or params['distance_from_center']==0:
             reward+=100
-    return float(reward)
+        if params['distance_from_center']>=0.47*params['track_width']:
+            reward-=20
+    speed_reward= speed_reward*speed_maintain_bonus
+# Before returning reward, update the variables
+    PARAMS.prev_speed = speed
+    PARAMS.prev_steering_angle = steering_angle
+    PARAMS.prev_direction_diff = direction_diff
+    PARAMS.prev_steps = steps
+    
+    return float(reward+speed_reward+intermediate_progress_bonus)
