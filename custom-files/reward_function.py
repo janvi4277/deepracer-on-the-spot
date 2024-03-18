@@ -123,6 +123,7 @@ def reward_function(params):
 
     speed_maintain_bonus=1.0
 #Check if the speed has dropped
+    is_turn_upcoming=False
     if next in curve_points:
         is_turn_upcoming=True
     has_speed_dropped = False
