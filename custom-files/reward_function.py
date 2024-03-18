@@ -1,11 +1,5 @@
 import math
 
-class PARAMS:
-    prev_speed = None
-    prev_steering_angle = None 
-    prev_steps = None
-    prev_direction_diff = None
-
 def angle_between_lines(x1, y1, x2, y2, x3, y3, x4, y4):
     dx1 = x2 - x1
     dy1 = y2 - y1
@@ -23,194 +17,203 @@ def reward_function(params):
     speed=params['speed']
     steering_angle=params['steering_angle']
     progress= params['progress']
-
-    if PARAMS.prev_steps is None or steps < PARAMS.prev_steps:
-        PARAMS.prev_speed = None
-        PARAMS.prev_steering_angle = None
-        PARAMS.prev_direction_diff = None
-
-    if params['is_offtrack'] or params['is_crashed']:
-        return 1e-9
-    waypoints = params['waypoints']
-    closest_waypoints = params['closest_waypoints']
-    straight_waypoints = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169];
-    left_waypoints=[93,94,95,96,97,98,99,100,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,117,118,119,120,121,132,133,134,135]
-    right_waypoints=[77,78,79,80,81,82,83]
-    not_very_right_waypoints=[67,68,69,70,71,72,73,74,75,76]
-    not_very_left=[122, 123, 124, 125, 126, 127, 128, 129, 130, 131]
-    basic_left=[18,19,20,21,22,23,53,54,55,56,57,58,59,60,89,90,91,92,101,102,103,104,105,106,107,1108,109,110,111,112,113,114,115,116,136,137,138,139,140,141,142,143]
-    basic_right=[61,62,63,64,65,66,84,85,86,87,88]
-    Total_time=14.0
-    total_steps=211
-# Calculate the direction of the center line based on the closest waypoints
-    waypoints_length= len(waypoints)
-    prev = int(closest_waypoints[0])
-    next = int(closest_waypoints[1])
-    next_point_1 = waypoints[next]
-    next_point_2 = waypoints[(next+1)%waypoints_length]
-    next_point_3 = waypoints[(next+2)%waypoints_length]
-    next_point_4 = waypoints[(next+3)%waypoints_length]
-    next_point_5 = waypoints[(next+4)%waypoints_length]
-    next_point_6 = waypoints[(next+5)%waypoints_length]
-    prev_point = waypoints[prev]
-    prev_point_2 = waypoints[(prev-1+waypoints_length)%waypoints_length]
-
-    # Calculate the direction in radius, arctan2(dy, dx), the result is (-pi, pi) in radians
-    track_direction = math.atan2(next_point_1[1] - params['y'], next_point_1[0] - params['x'])
-    # Convert to degree
-    track_direction = math.degrees(track_direction)
-
-    # Calculate the difference between the track direction and the heading direction of the car
-    # straight_direction_diff = abs(track_direction - params['heading']-params['steering_angle'])
-    direction_diff = abs(track_direction - params['heading'])
-    dir_diff=track_direction - params['heading']
-    if direction_diff > 180:
-        direction_diff = 360 - direction_diff
-
-    if abs(direction_diff)>30:
+    reward = 1e-3
+    if params['is_crashed'] or params['is_offtrack']:
         return 1e-3
-    # Penalize the reward if the difference is too large
-    angle_f= angle_between_lines(next_point_1[0],next_point_1[1],next_point_2[0],next_point_2[1],next_point_3[0],next_point_3[1],next_point_4[0],next_point_4[1])
-    angle_f2= angle_between_lines(next_point_3[0],next_point_3[1],next_point_4[0],next_point_4[1],next_point_5[0],next_point_5[1],next_point_6[0],next_point_6[1])
-    angle_b= angle_between_lines(prev_point_2[0],prev_point_2[1],prev_point[0],prev_point[1],next_point_1[0],next_point_1[1],next_point_2[0],next_point_2[1])
-    reward = 1e-9
-    total_angle = (angle_f+angle_b+angle_f2)/3
-    if total_angle >90:
-        total_angle-=180
-    elif total_angle <-90:
-        total_angle+=180
-    if abs(total_angle)<=5:
-        total_angle=0
-    if next ==1 or prev==1 or (next+1)%waypoints_length ==1 or (next+2)%waypoints_length ==1 or (next+3)%waypoints_length ==1 or (next+4)%waypoints_length ==1 or (next+5)%waypoints_length ==1 or (next+6)%waypoints_length ==1 or (next+7)%waypoints_length ==1 or (prev -1 +waypoints_length)%waypoints_length ==1:
-        total_angle =0
-
-
-    opt_speed= 5*math.tanh(8/(1+abs(total_angle)))
-    opt_speed=max(1.4,opt_speed)
-    speed_reward=(5-abs(params['speed']-opt_speed))**3
-
-# //////////////////
-    speed_maintain_bonus=1.0
-#Check if the speed has dropped
-    is_turn_upcoming= next in right_waypoints or next in left_waypoints or next in not_very_left or next in not_very_right_waypoints
-    has_speed_dropped = False
-    is_heading_in_right_direction=False
-    if next in left_waypoints or next in not_very_left and dir_diff>=0:
-        is_heading_in_right_direction=True
-    if next in right_waypoints or next in not_very_right_waypoints and dir_diff<=0:
-        is_heading_in_right_direction=True
-    if PARAMS.prev_speed is not None:
-        if PARAMS.prev_speed > speed:
-            has_speed_dropped = True
-    #Penalize slowing down without good reason on straight portions
-    if has_speed_dropped and not is_turn_upcoming: 
-        speed_maintain_bonus = min( speed / PARAMS.prev_speed, 1 )
-    #Penalize making the heading direction worse
-    heading_decrease_bonus = 0
-    if PARAMS.prev_direction_diff is not None:
-        if is_heading_in_right_direction:
-            if abs( PARAMS.prev_direction_diff / direction_diff ) > 1:
-                heading_decrease_bonus = min(10, abs( PARAMS.prev_direction_diff / direction_diff ))
-    #has the steering angle changed
-    has_steering_angle_changed = False
-    if PARAMS.prev_steering_angle is not None:
-        if not(math.isclose(PARAMS.prev_steering_angle,steering_angle)):
-            has_steering_angle_changed = True
-    steering_angle_maintain_bonus = 1 
-    #Not changing the steering angle is a good thing if heading in the right direction
-    if is_heading_in_right_direction and not has_steering_angle_changed:
-        if abs(direction_diff) < 10:
-            steering_angle_maintain_bonus *= 2
-        if abs(direction_diff) < 5:
-            steering_angle_maintain_bonus *= 2
-        if PARAMS.prev_direction_diff is not None and abs(PARAMS.prev_direction_diff) > abs(direction_diff):
-            steering_angle_maintain_bonus *= 2
-# Reward for making steady progress
-    progress_reward = 10 * progress / (steps+1)
-    if steps <= 5:
-        progress_reward = 1 #ignore progress in the first 5 steps
-# Bonus that the agent gets for completing every 10 percent of track
-# Is exponential in the progress / steps. 
-# exponent increases with an increase in fraction of lap completed
-    intermediate_progress_bonus = 0
-    pi = int(progress//10)
-    if pi > 0 :
-        intermediate_progress_bonus = progress_reward ** (3+0.25*pi)
-
-# ////////
-    #Then compute the heading reward
-    heading_reward = math.cos( abs(direction_diff ) * ( math.pi / 180 ) ) ** 10
-    if abs(direction_diff) <= 20:
-        heading_reward = math.cos( abs(direction_diff ) * ( math.pi / 180 ) ) ** 4
-
-    reward=reward+steering_angle_maintain_bonus*heading_reward*25
-
-    Total_time=14.0
-    total_steps=211
-
-    # if progress == 100 and steps > 250:
-    #     return 0.5*reward
+    optimal_points = [(-1.10870266e-01 ,-3.28923649e+00),
+                    ( 3.08530033e-03 ,-3.35179949e+00),
+                    ( 1.17040878e-01 ,-3.41436247e+00),
+                    ( 2.67155035e-01 ,-3.49677694e+00),
+                    ( 5.31224236e-01 ,-3.64175510e+00),
+                    ( 7.95292050e-01 ,-3.78673708e+00),
+                    ( 1.05935791e+00 ,-3.93172204e+00),
+                    ( 1.32342854e+00 ,-4.07664589e+00),
+                    ( 1.58752870e+00 ,-4.22124690e+00),
+                    ( 1.85165436e+00 ,-4.36551634e+00),
+                    ( 2.11583013e+00 ,-4.50907564e+00),
+                    ( 2.38008003e+00 ,-4.65153245e+00),
+                    ( 2.64442793e+00 ,-4.79247567e+00),
+                    ( 2.90889912e+00 ,-4.93143291e+00),
+                    ( 3.17351667e+00 ,-5.06790082e+00),
+                    ( 3.43830070e+00 ,-5.20132406e+00),
+                    ( 3.70326602e+00 ,-5.33109175e+00),
+                    ( 3.96842005e+00 ,-5.45651577e+00),
+                    ( 4.23376016e+00 ,-5.57679156e+00),
+                    ( 4.49926862e+00 ,-5.69094632e+00),
+                    ( 4.76490352e+00 ,-5.79778643e+00),
+                    ( 5.03058315e+00 ,-5.89588812e+00),
+                    ( 5.29616457e+00 ,-5.98353368e+00),
+                    ( 5.56143330e+00 ,-6.05912034e+00),
+                    ( 5.82602229e+00 ,-6.11983742e+00),
+                    ( 6.08928290e+00 ,-6.16196185e+00),
+                    ( 6.35014813e+00 ,-6.18126396e+00),
+                    ( 6.60677070e+00 ,-6.17225337e+00),
+                    ( 6.85592461e+00 ,-6.12833310e+00),
+                    ( 7.09069157e+00 ,-6.03978274e+00),
+                    ( 7.30962043e+00 ,-5.91675640e+00),
+                    ( 7.51196518e+00 ,-5.76581885e+00),
+                    ( 7.69812702e+00 ,-5.59312958e+00),
+                    ( 7.86807334e+00 ,-5.40268533e+00),
+                    ( 8.02199469e+00 ,-5.19784577e+00),
+                    ( 8.16039044e+00 ,-4.98148305e+00),
+                    ( 8.28350659e+00 ,-4.75570719e+00),
+                    ( 8.39191064e+00 ,-4.52240832e+00),
+                    ( 8.48583944e+00 ,-4.28300634e+00),
+                    ( 8.56549050e+00 ,-4.03872816e+00),
+                    ( 8.63107143e+00 ,-3.79067486e+00),
+                    ( 8.68269343e+00 ,-3.53983314e+00),
+                    ( 8.72009638e+00 ,-3.28709140e+00),
+                    ( 8.74240119e+00 ,-3.03333451e+00),
+                    ( 8.74827996e+00 ,-2.77959043e+00),
+                    ( 8.73437452e+00 ,-2.52736647e+00),
+                    ( 8.69728314e+00 ,-2.27897792e+00),
+                    ( 8.63268186e+00 ,-2.03793658e+00),
+                    ( 8.53541059e+00 ,-1.80952770e+00),
+                    ( 8.39779809e+00 ,-1.60321568e+00),
+                    ( 8.22407741e+00 ,-1.42384205e+00),
+                    ( 8.02358693e+00 ,-1.26952812e+00),
+                    ( 7.80301181e+00 ,-1.13711927e+00),
+                    ( 7.56643018e+00 ,-1.02428475e+00),
+                    ( 7.31708533e+00 ,-9.28608413e-01),
+                    ( 7.05757376e+00 ,-8.47717938e-01),
+                    ( 6.79010245e+00 ,-7.79168476e-01),
+                    ( 6.51664166e+00 ,-7.20377580e-01),
+                    ( 6.23909396e+00 ,-6.68483017e-01),
+                    ( 5.95923065e+00 ,-6.20581123e-01),
+                    ( 5.67403972e+00 ,-5.73456606e-01),
+                    ( 5.38853446e+00 ,-5.23561269e-01),
+                    ( 5.10326709e+00 ,-4.70215715e-01),
+                    ( 4.81885111e+00 ,-4.12634485e-01),
+                    ( 4.53584717e+00 ,-3.50157510e-01),
+                    ( 4.25478044e+00 ,-2.82028431e-01),
+                    ( 3.97611570e+00 ,-2.07562343e-01),
+                    ( 3.70031058e+00 ,-1.26088823e-01),
+                    ( 3.42785465e+00 ,-3.69277130e-02),
+                    ( 3.15927310e+00 , 6.05770429e-02),
+                    ( 2.89511041e+00 , 1.67002619e-01),
+                    ( 2.63591374e+00 , 2.82811880e-01),
+                    ( 2.38222133e+00 , 4.08343243e-01),
+                    ( 2.13455322e+00 , 5.43814307e-01),
+                    ( 1.89340079e+00 , 6.89329323e-01),
+                    ( 1.65921396e+00 , 8.44886204e-01),
+                    ( 1.43238606e+00 , 1.01038213e+00),
+                    ( 1.21323700e+00 , 1.18561797e+00),
+                    ( 1.00199568e+00 , 1.37030195e+00),
+                    ( 7.98782693e-01 , 1.56405279e+00),
+                    ( 6.03594490e-01 , 1.76640211e+00),
+                    ( 4.16290756e-01 , 1.97679601e+00),
+                    ( 2.36587938e-01 , 2.19459483e+00),
+                    ( 6.40631648e-02 , 2.41907055e+00),
+                    (-1.01828028e-01 , 2.64940087e+00),
+                    (-2.61725638e-01 , 2.88466167e+00),
+                    (-4.16355977e-01 , 3.12382637e+00),
+                    (-5.66551770e-01 , 3.36580493e+00),
+                    (-7.13189527e-01 , 3.60959135e+00),
+                    (-8.56946865e-01 , 3.85444056e+00),
+                    (-9.98408751e-01 , 4.09979761e+00),
+                    (-1.13343589e+00 , 4.33760845e+00),
+                    (-1.27082180e+00 , 4.57302061e+00),
+                    (-1.41287010e+00 , 4.80369134e+00),
+                    (-1.56179139e+00 , 5.02734085e+00),
+                    (-1.71981139e+00 , 5.24155990e+00),
+                    (-1.88965050e+00 , 5.44318975e+00),
+                    (-2.07413728e+00 , 5.62853504e+00),
+                    (-2.27515222e+00 , 5.79430140e+00),
+                    (-2.49258695e+00 , 5.93887995e+00),
+                    (-2.72488857e+00 , 6.06221632e+00),
+                    (-2.96907522e+00 , 6.16656525e+00),
+                    (-3.22245930e+00 , 6.25439210e+00),
+                    (-3.48320632e+00 , 6.32716208e+00),
+                    (-3.74989209e+00 , 6.38575937e+00),
+                    (-4.02129847e+00 , 6.43070516e+00),
+                    (-4.29627008e+00 , 6.46243780e+00),
+                    (-4.57370682e+00 , 6.48135644e+00),
+                    (-4.85257196e+00 , 6.48781506e+00),
+                    (-5.13189266e+00 , 6.48213378e+00),
+                    (-5.41076496e+00 , 6.46470655e+00),
+                    (-5.68835263e+00 , 6.43588343e+00),
+                    (-5.96385326e+00 , 6.39579341e+00),
+                    (-6.23619852e+00 , 6.34351137e+00),
+                    (-6.50412209e+00 , 6.27803736e+00),
+                    (-6.76592304e+00 , 6.19770844e+00),
+                    (-7.01952660e+00 , 6.10061400e+00),
+                    (-7.26176040e+00 , 5.98349525e+00),
+                    (-7.48825301e+00 , 5.84236635e+00),
+                    (-7.69283425e+00 , 5.67322038e+00),
+                    (-7.87809604e+00 , 5.48377927e+00),
+                    (-8.04504670e+00 , 5.27825314e+00),
+                    (-8.19437583e+00 , 5.05983275e+00),
+                    (-8.32663924e+00 , 4.83105840e+00),
+                    (-8.44245238e+00 , 4.59402941e+00),
+                    (-8.54227753e+00 , 4.35040086e+00),
+                    (-8.62618810e+00 , 4.10145442e+00),
+                    (-8.69436300e+00 , 3.84838332e+00),
+                    (-8.74650494e+00 , 3.59221070e+00),
+                    (-8.78216393e+00 , 3.33397109e+00),
+                    (-8.80096529e+00 , 3.07473978e+00),
+                    (-8.80019330e+00 , 2.81573063e+00),
+                    (-8.77628835e+00 , 2.55881763e+00),
+                    (-8.72501321e+00 , 2.30677373e+00),
+                    (-8.64066839e+00 , 2.06379791e+00),
+                    (-8.51385632e+00 , 1.83760122e+00),
+                    (-8.36087293e+00 , 1.62439824e+00),
+                    (-8.18646353e+00 , 1.42297990e+00),
+                    (-7.99462841e+00 , 1.23186375e+00),
+                    (-7.78788023e+00 , 1.05007569e+00),
+                    (-7.56837781e+00 , 8.76657102e-01),
+                    (-7.33801715e+00 , 7.10663393e-01),
+                    (-7.09854758e+00 , 5.51114402e-01),
+                    (-6.85166087e+00 , 3.96944961e-01),
+                    (-6.59880108e+00 , 2.47156882e-01),
+                    (-6.34144369e+00 , 1.00631737e-01),
+                    (-6.08077784e+00 ,-4.36080269e-02),
+                    (-5.81773261e+00 ,-1.86391152e-01),
+                    (-5.55306852e+00 ,-3.28434806e-01),
+                    (-5.28750017e+00 ,-4.70445296e-01),
+                    (-5.02202156e+00 ,-6.12633473e-01),
+                    (-4.75666555e+00 ,-7.55064417e-01),
+                    (-4.49142046e+00 ,-8.97714977e-01),
+                    (-4.22629234e+00 ,-1.04059715e+00),
+                    (-3.96128281e+00 ,-1.18371412e+00),
+                    (-3.69639098e+00 ,-1.32706414e+00),
+                    (-3.43161535e+00 ,-1.47064423e+00),
+                    (-3.16695474e+00 ,-1.61445202e+00),
+                    (-2.90240872e+00 ,-1.75848670e+00),
+                    (-2.63797773e+00 ,-1.90274914e+00),
+                    (-2.37366285e+00 ,-2.04724146e+00),
+                    (-2.10946548e+00 ,-2.19196647e+00),
+                    (-1.84539294e+00 ,-2.33693850e+00),
+                    (-1.58132648e+00 ,-2.48192108e+00),
+                    (-1.31725949e+00 ,-2.62690461e+00),
+                    (-1.05319187e+00 ,-2.77188647e+00),
+                    (-7.89123505e-01 ,-2.91686606e+00),
+                    (-5.25053859e-01 ,-3.06184399e+00),
+                    (-2.60984318e-01 ,-3.20682204e+00),
+                    (1.10870266e-01 ,-3.28923649e+00)]    
+    # Reward when yaw (car_orientation) is pointed to the next waypoint IN FRONT.
     
-    # if (steps % 10) == 0 and progress >= (steps / total_steps) * 100 :
-    #     reward += 1000
-    # elif (steps %10) == 0 and progress <=(steps/total_steps)*100:
-    #     reward -=500
-    
-    if next in straight_waypoints:
-        reward += 200/(1+abs(track_direction - params['heading']-params['steering_angle']))
+    # Find nearest waypoint coordinates
+    rabbit = [0,0]
+    pointing = [0,0]
+    next=params['closest_waypoints'][1]
+    rabbit = [optimal_points[next][0],optimal_points[next][1]]
 
-    if next in left_waypoints and params['is_left_of_center']:
-        reward+=30.0
-        if  params['distance_from_center']>=0.1*params['track_width']:
-            reward+=20
-        if params['distance_from_center']>=0.2*params['track_width']:
-           reward+=30
-        if params['distance_from_center']>=0.3*params['track_width']:
-           reward+=50
-        if params['distance_from_center']>=0.47*params['track_width']:
-            reward-=20
-
-    if next in right_waypoints and not params['is_left_of_center']:
-        reward+=30.0
-        if params['distance_from_center']>=0.1*params['track_width']:
-            reward+=20
-        if params['distance_from_center']>=0.2*params['track_width']:
-            reward+=30
-        if params['distance_from_center']>=0.3*params['track_width']:
-            reward+=50
-        if params['distance_from_center']>=0.47*params['track_width']:
-            reward-=20
-    if next in not_very_right_waypoints and not params['is_left_of_center']:
-        reward+=60.0
-        if params['distance_from_center']>=0.1*params['track_width']:
-           reward+=20
-        if params['distance_from_center']>=0.2*params['track_width']:
-           reward+=40
-        if params['distance_from_center']>=0.47*params['track_width']:
-            reward-=20
-    if next in not_very_left and params['is_left_of_center']:
-        reward+=60.0
-        if params['distance_from_center']>=0.1*params['track_width']:
-           reward+=20
-        if params['distance_from_center']>=0.2*params['track_width']:
-           reward+=40
-        if params['distance_from_center']>=0.47*params['track_width']:
-            reward-=20
-    if next in basic_left:
-        if params['is_left_of_center'] or params['distance_from_center']==0:
-            reward+=100
-        if params['distance_from_center']>=0.47*params['track_width']:
-            reward-=20
-    if next in basic_right:
-        if not params['is_left_of_center'] or params['distance_from_center']==0:
-            reward+=100
-        if params['distance_from_center']>=0.47*params['track_width']:
-            reward-=20
-    speed_reward= speed_reward*speed_maintain_bonus
-# Before returning reward, update the variables
-    PARAMS.prev_speed = speed
-    PARAMS.prev_steering_angle = steering_angle
-    PARAMS.prev_direction_diff = direction_diff
-    PARAMS.prev_steps = steps
+    radius = math.hypot(params['x'] - rabbit[0], params['y'] - rabbit[1])
     
-    return float(reward+speed_reward+intermediate_progress_bonus)
+    pointing[0] = params['x'] + (radius * math.cos(params['heading']))
+    pointing[1] = params['y'] + (radius * math.sin(params['heading']))
+    
+    vector_delta = math.hypot(pointing[0] - rabbit[0], pointing[1] - rabbit[1])
+    
+    # Max distance for pointing away will be the radius * 2
+    # Min distance means we are pointing directly at the next waypoint
+    # We can setup a reward that is a ratio to this max.
+    
+    if vector_delta == 0:
+        reward += 1
+    else:
+        reward += ( 1 - ( vector_delta / (radius * 2)))
+
+    return reward    
+
+    
