@@ -86,10 +86,6 @@ def reward_function(params):
 
     if next in straight_waypoints:
         steering_reward = 200/(1+abs(straight_direction_diff - total_angle))
-    elif next in turn_points:
-        steering_reward = 300/(1+abs(params['steering_angle']-total_angle))
-    else:
-        steering_reward = 100/(1+abs(params['steering_angle']-total_angle))
 
     if abs(total_angle) >30 and abs(params['steering_angle'])>25 and total_angle*params['steering_angle']>=0:
         steering_reward=100
@@ -124,8 +120,6 @@ def reward_function(params):
         opt_speed=max(1.4,opt_speed)
         speed_reward+=(5-abs(params['speed']-opt_speed))**2
 
-    if abs(params['steering_angle']-total_angle) >=10:
-        reward*=0.25
     if abs(params['steering_angle'])<10 and abs(total_angle)>20:
         return 1e-3
 
