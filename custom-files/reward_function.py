@@ -65,7 +65,7 @@ def reward_function(params):
         total_angle=0
     if next ==1 or prev==1 or (next+1)%waypoints_length ==1 or (next+2)%waypoints_length ==1 or (next+3)%waypoints_length ==1 or (next+4)%waypoints_length ==1 or (next+5)%waypoints_length ==1 or (next+6)%waypoints_length ==1 or (next+7)%waypoints_length ==1 or (prev -1 +waypoints_length)%waypoints_length ==1:
         total_angle =0
-
+    steering_reward=0
     if next in straight_waypoints:
         steering_reward = 100/(1+abs(straight_direction_diff - total_angle))
     else:
