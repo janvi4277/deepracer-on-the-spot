@@ -30,7 +30,7 @@ def reward_function(params):
         PARAMS.prev_direction_diff = None
     if params['is_offtrack'] or params['is_crashed']:
         return 1e-9
-    
+    steering_reward=1.0
     waypoints = params['waypoints']
     closest_waypoints = params['closest_waypoints']
     straight_waypoints = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169];
@@ -85,7 +85,7 @@ def reward_function(params):
         total_angle =0
 
     if next in straight_waypoints:
-        steering_reward = 200/(1+abs(straight_direction_diff - total_angle))
+        steering_reward += 200/(1+abs(straight_direction_diff - total_angle))
 
     if abs(total_angle) >30 and abs(params['steering_angle'])>25 and total_angle*params['steering_angle']>=0:
         steering_reward=100
