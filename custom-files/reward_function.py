@@ -144,6 +144,6 @@ def reward_function(params):
     if next in basic_right:
         if not params['is_left_of_center'] or params['distance_from_center']==0:
             reward+=50
-    if total_angle>10 and params['steering_angle']>12:
+    if total_angle>10 and params['steering_angle']>10 and next in curve_points:
         reward +=50
     return float(reward)
