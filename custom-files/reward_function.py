@@ -17,21 +17,14 @@ def reward_function(params):
         return 1e-9
     waypoints = params['waypoints']
     closest_waypoints = params['closest_waypoints']
-    steps= params['steps']
-    progress= params['progress']
-    expected_tot_steps=210
-    noramal_tot_steps=280
-    expected_step= (expected_tot_steps*progress)/100
-    normal_step= (noramal_tot_steps*progress)/100
-    prog_reward = 1e-3
-
     straight_waypoints = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169];
-    left_waypoints=[93,94,95,96,97,98,99,100,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,117,118,119,120,121,132,133,134,135]
+    left_waypoints=[93,94,95,96,97,98,99,100,24,25,26,27,28,29,30,31,32,33,41,42,43,44,45,46,47,48,49,50,51,52,117,118,119,120,121,132,133,134,135]
     right_waypoints=[77,78,79,80,81,82,83]
     not_very_right_waypoints=[67,68,69,70,71,72,73,74,75,76]
-    not_very_left=[122, 123, 124, 125, 126, 127, 128, 129, 130, 131]
-    basic_left=[18,19,20,21,22,23,56,57,58,59,60,89,90,91,92,101,102,103,104,105,106,107,1108,109,110,111,112,113,114,115,116,136,137,138,139,140,141,142,143]
+    not_very_left=[34,35,36,37,38,39,40,122, 123, 124, 125, 126, 127, 128, 129, 130, 131]
+    basic_left=[18,19,20,21,22,23,53,54,55,56,57,58,59,60,89,90,91,92,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,136,137,138,139,140,141,142,143]
     basic_right=[61,62,63,64,65,66,84,85,86,87,88]
+    curve_points=[22,23,24,25,26,27,28,29,30,31,32,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,92,93,94,95,96,97,98,99,100,101,102,112,113,114,115,116,117,118,119,120,121,122,129,130,131,132,133,134,135,136,137,138]
     # Calculate the direction of the center line based on the closest waypoints
     waypoints_length= len(waypoints)
     prev = int(closest_waypoints[0])
@@ -56,8 +49,7 @@ def reward_function(params):
 
     if straight_direction_diff>180:
         straight_direction_diff= 360-straight_direction_diff
-    if direction_diff>30:
-        return 1e-9
+
     angle_f= angle_between_lines(next_point_1[0],next_point_1[1],next_point_2[0],next_point_2[1],next_point_3[0],next_point_3[1],next_point_4[0],next_point_4[1])
     angle_b= angle_between_lines(prev_point_2[0],prev_point_2[1],prev_point[0],prev_point[1],next_point_1[0],next_point_1[1],next_point_2[0],next_point_2[1])
     reward = 1e-9
@@ -72,8 +64,8 @@ def reward_function(params):
         total_angle=-30
     if next ==1 or prev==1 or (next+1)%waypoints_length ==1 or (next+2)%waypoints_length ==1 or (next+3)%waypoints_length ==1 or (next+4)%waypoints_length ==1 or (next+5)%waypoints_length ==1 or (next+6)%waypoints_length ==1 or (next+7)%waypoints_length ==1 or (prev -1 +waypoints_length)%waypoints_length ==1:
         total_angle = 0
-    steering_reward=1e-3
-    if next in straight_waypoints:
+    steering_reward=1e-4
+    if next not in curve_points:
         steering_reward = 100/(1+abs(straight_direction_diff - total_angle))
     else:
         steering_reward = 100/(1+abs(params['steering_angle']-total_angle))
@@ -85,11 +77,15 @@ def reward_function(params):
     reward=reward+ steering_reward
     if direction_diff <=10.0:
         reward+=10.0
-    if abs(total_angle)<=5:
+    if abs(total_angle)<=7:
+        if params['speed'] >=2.8:
+            reward+=5
         if params['speed'] >=3:
-            reward+=30
+            reward+=25
+        if params['speed']>=3.2:
+            reward+=20
         if params['speed'] >=3.4:
-            reward+=40
+            reward+=20
         if params['speed'] >=3.8:
             reward+=50
         if params['speed'] >=4:
@@ -141,11 +137,5 @@ def reward_function(params):
     if next in basic_right:
         if not params['is_left_of_center'] or params['distance_from_center']==0:
             reward+=100
-    if steps<=5:
-        reward=reward
-    elif steps>normal_step:
-        return 0.5*reward
-    else:
-        prog_reward += 100/(1+abs(steps-expected_step))
-    reward +=prog_reward
+
     return float(reward)
