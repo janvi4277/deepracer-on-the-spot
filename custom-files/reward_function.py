@@ -16,6 +16,8 @@ def reward_function(params):
     if params['is_offtrack'] or params['is_crashed']:
         return 1e-9
     waypoints = params['waypoints']
+    steps=params['steps']
+    progress = params['progress']
     closest_waypoints = params['closest_waypoints']
     straight_waypoints = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169];
     left_waypoints=[93,94,95,96,97,98,99,100,24,25,26,27,28,29,30,31,32,33,41,42,43,44,45,46,47,48,49,50,51,52,117,118,119,120,121,132,133,134,135]
@@ -137,5 +139,31 @@ def reward_function(params):
     if next in basic_right:
         if not params['is_left_of_center'] or params['distance_from_center']==0:
             reward+=100
-
+    if progress ==100:
+        if steps <=270:
+            reward+=10
+        if steps <=250:
+            reward+=30
+        if steps <=230:
+            reward+=30
+        if steps <=210:
+            reward+=30
+        if steps <=190:
+            reward+=30
+        if steps <=170:
+            reward+=30
+    threshold_1=210
+    threshold_2=240
+    threshold_3=270
+    steps_t1= (threshold_1*progress)/100
+    steps_t2= (threshold_2*progress)/100
+    steps_t3= (threshold_3*progress)/100
+    prog_reward = 1e-3
+    if steps>=5 and steps%30==0:
+        if steps<= steps_t3:
+            reward+=50
+        if steps<= steps_t2:
+            reward+=100
+        if steps<= steps_t1:
+            reward+=150
     return float(reward)
