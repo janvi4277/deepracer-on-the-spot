@@ -101,7 +101,17 @@ def reward_function(params):
         opt_speed=max(1.4,opt_speed)
         reward+=(5-abs(params['speed']-opt_speed))**2
 
-
+    if next in basic_left or next in basic_right:
+        if params['speed'] >=2.4:
+            reward +=20
+        if params['speed'] >=2.6:
+            reward +=20
+        if params['speed'] >=2.8:
+            reward +=30
+        if params['speed'] >=3.0:
+            reward +=30
+        if params['speed'] >=3.3:
+            reward +=40
     if next in straight_waypoints:
 
         if params['distance_from_center']==0:
@@ -143,15 +153,15 @@ def reward_function(params):
         if steps <=270:
             reward+=10
         if steps <=250:
-            reward+=30
+            reward+=50
         if steps <=230:
-            reward+=30
+            reward+=80
         if steps <=210:
-            reward+=30
+            reward+=90
         if steps <=190:
-            reward+=30
+            reward+=90
         if steps <=170:
-            reward+=30
+            reward+=100
     threshold_1=210
     threshold_2=240
     threshold_3=270
