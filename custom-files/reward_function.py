@@ -79,7 +79,7 @@ def reward_function(params):
     reward=reward+ steering_reward
     if direction_diff <=10.0:
         reward+=10.0
-    if abs(total_angle)<=7:
+    if next in straight_waypoints:
         if params['speed'] >=2.8:
             reward+=5
         if params['speed'] >=3:
@@ -88,30 +88,35 @@ def reward_function(params):
             reward+=20
         if params['speed'] >=3.4:
             reward+=20
-        if params['speed'] >=3.8:
+        if params['speed'] >=3.7:
             reward+=50
         if params['speed'] >=4:
-            reward+=60
+            reward+=80
         if params['speed'] >=4.2:
-            reward+=65
+            reward+=80
         if params['speed'] >=4.4:
-            reward+=70
+            reward+=80
+    elif next not in curve_points:
+        if params['speed'] >=2.0:
+            reward+=10
+        if params['speed'] >=2.2:
+            reward+=20
+        if params['speed'] >=2.4:
+            reward+=20
+        if params['speed'] >=2.6:
+            reward+=20
+        if params['speed'] >=2.8:
+            reward+=20
+        if params['speed'] >=3.0:
+            reward+=30
+        if params['speed'] >=3.2:
+            reward+=30
     else:
         opt_speed= 5*math.tanh(8/(1+abs(total_angle)))
         opt_speed=max(1.4,opt_speed)
         reward+=(5-abs(params['speed']-opt_speed))**2
 
-    if next in basic_left or next in basic_right:
-        if params['speed'] >=2.4:
-            reward +=20
-        if params['speed'] >=2.6:
-            reward +=20
-        if params['speed'] >=2.8:
-            reward +=30
-        if params['speed'] >=3.0:
-            reward +=30
-        if params['speed'] >=3.3:
-            reward +=40
+
     if next in straight_waypoints:
 
         if params['distance_from_center']==0:
@@ -151,29 +156,28 @@ def reward_function(params):
             reward+=100
     if progress ==100:
         if steps <=270:
-            reward+=10
+            reward+=2000
         if steps <=250:
-            reward+=50
+            reward+=3500
         if steps <=230:
-            reward+=80
+            reward+=1500
         if steps <=210:
-            reward+=90
+            reward+=1500
         if steps <=190:
-            reward+=90
+            reward+=1000
         if steps <=170:
-            reward+=100
+            reward+=500
     threshold_1=210
     threshold_2=240
     threshold_3=270
     steps_t1= (threshold_1*progress)/100
     steps_t2= (threshold_2*progress)/100
     steps_t3= (threshold_3*progress)/100
-    prog_reward = 1e-3
     if steps>=5 and steps%30==0:
         if steps<= steps_t3:
-            reward+=50
+            reward+=500
         if steps<= steps_t2:
-            reward+=100
+            reward+=400
         if steps<= steps_t1:
-            reward+=150
+            reward+=600
     return float(reward)
