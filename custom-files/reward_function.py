@@ -26,7 +26,7 @@ def reward_function(params):
     not_very_left=[34,35,36,37,38,39,40,122, 123, 124, 125, 126, 127, 128, 129, 130, 131]
     basic_left=[18,19,20,21,22,23,53,54,55,56,57,58,59,60,89,90,91,92,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,136,137,138,139,140,141,142,143]
     basic_right=[61,62,63,64,65,66,84,85,86,87,88]
-    curve_points=[22,23,24,25,26,27,28,29,30,31,32,43,44,45,46,47,48,49,50,51,52,53,54,55,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,129,130,131,132,133,134,135,136,137,138]
+    curve_points=[22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,129,130,131,132,133,134,135,136,137,138]
     # Calculate the direction of the center line based on the closest waypoints
     waypoints_length= len(waypoints)
     prev = int(closest_waypoints[0])
@@ -115,7 +115,13 @@ def reward_function(params):
         opt_speed= 5*math.tanh(8/(1+abs(total_angle)))
         opt_speed=max(1.4,opt_speed)
         reward+=((5-abs(params['speed']-opt_speed))**2)/2
+    
+    if next in straight_waypoints:
 
+        if params['distance_from_center']==0:
+            reward=reward+5*(params['speed']**2)
+        elif params['distance_from_center']<=0.1*params['track_width']:
+            reward+=3*(params['speed']**2)
 
     if next in left_waypoints and params['is_left_of_center']:
         reward+=25.0
@@ -153,23 +159,23 @@ def reward_function(params):
         elif steps <=260:
             reward+=2000
         elif steps <=250:
-            reward+=37500
+            reward+=3750
         elif steps <=240:
             reward+=6000
         elif steps <=230:
-            reward+=6900
+            reward+=8000
         elif steps <=220:
-            reward+=7700
+            reward+=10000
         elif steps <=210:
-            reward+=8400
+            reward+=14000
         elif steps <=200:
-            reward+=9000
+            reward+=18000
         elif steps <=190:
-            reward+=9500
+            reward+=20000
         elif steps <=180:
-            reward+=9900
+            reward+=23000
         elif steps <=170:
-            reward+=10200
+            reward+=25000
     threshold_1=210
     threshold_2=220
     threshold_3=230
